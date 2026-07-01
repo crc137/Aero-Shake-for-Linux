@@ -14,7 +14,8 @@ cat << 'EOF'
         
 EOF
 
-RUNNING_COUNT=$(pgrep -fc "python3 $INSTALL_DIR/aero_shake.py")
+RUNNING_COUNT=$(pgrep -fc "python3 $INSTALL_DIR/aero_shake.py" || true)
+RUNNING_COUNT=${RUNNING_COUNT:-0}
 if [ "$RUNNING_COUNT" -gt 0 ]; then
     echo "Aero Shake is already running ($RUNNING_COUNT processes)."
     echo "Removing autostart entry and not creating new processes..."
@@ -56,7 +57,7 @@ sudo curl -sSL "https://raw.coonlink.com/cloud/AeroShake.disabled.png" -o "$INST
 
 echo "==> Setting up autostart on login..."
 mkdir -p "$AUTOSTART_DIR"
-cat > "$AUTOSTART_DIR/aero-shake.desktop" << EOF
+cat > "$AUTOSTART_DIR/aero-shake.desktop" << DESKTOP_EOF
 [Desktop Entry]
 Type=Application
 Name=Aero Shake
@@ -65,7 +66,7 @@ Exec=python3 $INSTALL_DIR/aero_shake.py
 Icon=preferences-desktop-display
 X-GNOME-Autostart-enabled=true
 Terminal=false
-EOF
+DESKTOP_EOF
 
 echo "==> Starting Aero Shake in the background..."
 nohup python3 "$INSTALL_DIR/aero_shake.py" >/tmp/aero_shake.log 2>&1 &
