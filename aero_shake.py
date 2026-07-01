@@ -39,11 +39,19 @@ def minimize_all_except(active_win):
         print("Error:", e)
 
 def watch_loop():
-    last_win, last_pos, shake_count = None, None, 0
-    first_shake_time, cooldown_until = time.time(), 0
+    import collections
+    WINDOW_SEC = 0.6
+    MIN_REVERSALS = 4
+    MIN_STEP = 12
+
+    last_win, last_pos, last_dir = None, None, 0
+    history = collections.deque()
+    cooldown_until = 0
+
     while True:
         if not enabled:
-            last_win, last_pos, shake_count = None, None, 0
+            last_win, last_pos, last_dir = None, None, 0
+            history.clear()
             time.sleep(0.2)
             continue
 
@@ -52,17 +60,24 @@ def watch_loop():
             x, y = get_window_position(current_win)
             if x is not None and y is not None:
                 if current_win == last_win and last_pos is not None:
-                    distance = abs(x - last_pos[0]) + abs(y - last_pos[1])
-                    if time.time() >= cooldown_until and distance > 15:
-                        if shake_count == 0:
-                            first_shake_time = time.time()
-                        shake_count += 1
-                        if shake_count >= 4 and (time.time() - first_shake_time < 1.2):
+                    dx = x - last_pos[0]
+                    dy = y - last_pos[1]
+                    delta = dx if abs(dx) >= abs(dy) else dy
+                    now = time.time()
+                    if abs(delta) >= MIN_STEP:
+                        direction = 1 if delta > 0 else -1
+                        if last_dir != 0 and direction != last_dir:
+                            history.append(now)
+                        last_dir = direction
+                        while history and now - history[0] > WINDOW_SEC:
+                            history.popleft()
+                        if len(history) >= MIN_REVERSALS and now >= cooldown_until:
                             minimize_all_except(current_win)
-                            shake_count = 0
-                            cooldown_until = time.time() + 2
+                            cooldown_until = now + 2
+                            history.clear()
                 else:
-                    shake_count = 0
+                    history.clear()
+                    last_dir = 0
                 last_pos, last_win = (x, y), current_win
         time.sleep(0.05)
 
