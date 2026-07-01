@@ -32,8 +32,7 @@ gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true
 gsettings set org.gnome.desktop.interface enable-animations true 2>/dev/null || true
 
 echo "==> Installing dependencies (xdotool + tray support)..."
-sudo apt install -y xdotool python3-pip python3-gi gir1.2-ayatanaappindicator3-0.1 \
-  || sudo apt install -y xdotool python3-pip python3-gi gir1.2-appindicator3-0.1
+sudo apt install -y xdotool python3-pip python3-gi gir1.2-ayatanaappindicator3-0.1 \ || sudo apt install -y xdotool python3-pip python3-gi gir1.2-appindicator3-0.1
 pip install --user --break-system-packages pystray pillow
 
 echo "==> Creating $INSTALL_DIR..."
