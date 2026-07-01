@@ -6,6 +6,10 @@
 
 A port of the classic Windows Aero Shake feature: grab a window by its title bar, shake it left and right, and all other open windows are minimized. The active window stays where it is.
 
+<p align="center">
+  <img src="https://raw.coonlink.com/cloud/2026-07-01%2015-39-24.gif" alt="Aero Shake Demo" width="800"/>
+</p>
+
 ## Installation
 
 ```bash
