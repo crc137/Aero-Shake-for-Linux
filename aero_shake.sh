@@ -14,6 +14,19 @@ cat << 'EOF'
         
 EOF
 
+RUNNING_COUNT=$(pgrep -fc "python3 $INSTALL_DIR/aero_shake.py")
+if [ "$RUNNING_COUNT" -gt 0 ]; then
+    echo "Aero Shake is already running ($RUNNING_COUNT processes)."
+    echo "Removing autostart entry and not creating new processes..."
+    if [ -f "$AUTOSTART_DIR/aero-shake.desktop" ]; then
+        rm "$AUTOSTART_DIR/aero-shake.desktop"
+        echo "Autostart entry removed: $AUTOSTART_DIR/aero-shake.desktop."
+    fi
+    echo "Done."
+    echo "You can start Aero Shake manually by running: python3 $INSTALL_DIR/aero_shake.py"
+    exit 0
+fi
+
 echo "==> Checking if window animations are enabled (Gnome)..."
 gsettings get org.gnome.desktop.interface enable-animations 2>/dev/null || true
 gsettings set org.gnome.desktop.interface enable-animations true 2>/dev/null || true
