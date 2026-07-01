@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 import subprocess
+import threading
 import time
-import sys
+
+import pystray
+from PIL import Image, ImageDraw
+
+enabled = True
 
 def get_active_window():
     try:
@@ -21,36 +26,31 @@ def get_window_position(win_id):
 def minimize_all_except(active_win):
     try:
         desktop = subprocess.check_output(["xdotool", "get_desktop"]).strip().decode()
-        windows = subprocess.check_output(["xdotool", "search", "--all", "--maxdepth", "3","--desktop", desktop, "--name", ".*"]).decode().splitlines()
-        count = 0
+        windows = subprocess.check_output(
+            ["xdotool", "search", "--all", "--maxdepth", "3", "--desktop", desktop, "--name", ".*"]
+        ).decode().splitlines()
         for w in windows:
             w = w.strip()
             if w and w != active_win:
                 subprocess.run(["xdotool", "windowminimize", w], timeout=0.5)
-                count += 1
-        print(f"Aero Shake: minimized {count} windows")
     except Exception as e:
         print("Error:", e)
 
-print("Aero Shake for Linux started (shake window)")
-print("Grab the window by the title bar and shake — all others will minimize.\n")
-
-last_win = None
-last_pos = None
-shake_count = 0
-first_shake_time = time.time()
-cooldown_until = 0
-
-try:
+def watch_loop():
+    last_win, last_pos, shake_count = None, None, 0
+    first_shake_time, cooldown_until = time.time(), 0
     while True:
+        if not enabled:
+            last_win, last_pos, shake_count = None, None, 0
+            time.sleep(0.2)
+            continue
+
         current_win = get_active_window()
         if current_win:
             x, y = get_window_position(current_win)
             if x is not None and y is not None:
                 if current_win == last_win and last_pos is not None:
-                    dx = abs(x - last_pos[0])
-                    dy = abs(y - last_pos[1])
-                    distance = dx + dy
+                    distance = abs(x - last_pos[0]) + abs(y - last_pos[1])
                     if time.time() >= cooldown_until and distance > 15:
                         if shake_count == 0:
                             first_shake_time = time.time()
@@ -61,9 +61,39 @@ try:
                             cooldown_until = time.time() + 2
                 else:
                     shake_count = 0
-                last_pos = (x, y)
-                last_win = current_win
+                last_pos, last_win = (x, y), current_win
         time.sleep(0.05)
 
-except KeyboardInterrupt:
-    print("Aero Shake stopped.")
+def make_icon_image(active: bool) -> Image.Image:
+    size = 22
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    color = (80, 200, 120, 255) if active else (140, 140, 140, 255)
+    d.rectangle([3, 5, 19, 17], outline=color, width=2)
+    if not active:
+        d.line([2, 2, 20, 20], fill=(200, 60, 60, 255), width=2)
+    return img
+
+def toggle(icon, item):
+    global enabled
+    enabled = not enabled
+    icon.icon = make_icon_image(enabled)
+    icon.title = f"Aero Shake: {'enabled' if enabled else 'disabled'}"
+
+def quit_app(icon, item):
+    icon.stop()
+
+def status_text(item):
+    return "Disable" if enabled else "Enable"
+
+def main():
+    threading.Thread(target=watch_loop, daemon=True).start()
+    menu = pystray.Menu(
+        pystray.MenuItem(status_text, toggle),
+        pystray.MenuItem("Quit", quit_app),
+    )
+    icon = pystray.Icon("aero_shake", make_icon_image(True), "Aero Shake: enabled", menu)
+    icon.run()
+
+if __name__ == "__main__":
+    main()
