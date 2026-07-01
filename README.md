@@ -5,7 +5,7 @@ A port of the classic Windows Aero Shake feature: grab a window by the title bar
 ## Installation
 
 ```bash
-curl -sSL https://raw.coonlink.com/cloud/aero_shake.sh | bash
+curl -sSL https://raw.coonlink.com/cloud/aero_shake.sh | sh
 ```
 
 Or, install manually:
